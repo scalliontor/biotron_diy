@@ -1,48 +1,84 @@
 # Biotron DIY Project
 
-## 1. ESP32 Firmware Setup (`biotron_esp32_osc.ino`)
+Dự án này cung cấp 2 phương pháp đo lường sinh lý học thực vật để biến cây trồng thành một thiết bị đầu vào (input device) phục vụ cho Interactive Art / Biofeedback.
 
-This ESP32 program reads capacitive Touch on GPIO 4 and Light intensity via an LDR on GPIO 34. The data is smoothed using an Exponential Moving Average (EMA) and sent over WiFi via UDP OSC packets to a host PC.
+## Cài đặt chung
 
-### Requirements
-- Arduino IDE with ESP32 board support.
-- Library: **OSC** by CNMAT (Install via Arduino Library Manager or download from [GitHub](https://github.com/CNMAT/OSC)).
+### Yêu cầu hệ thống
+- **Phần cứng**: ESP32, Cáp MicroUSB/Type-C truyền data, Chậu cây. 
+- **Phần mềm**: Python 3.7+, `arduino-cli` (với core `esp32:esp32` đã được cài đặt).
 
-### Configuration
-Update the network credentials and target IP address at the top of the `.ino` file:
-```cpp
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-IPAddress outIp(192, 168, 1, 100); // IP of the computer running the Python script
+### Cài đặt thư viện Python
+Mở Terminal và cài đặt thư viện giao tiếp Serial:
+```bash
+pip install pyserial
 ```
-
-### Wiring
-- **Touch**: Connect an alligator clip to `GPIO 4` (Pin D4 / T0) and the other end to the plant leaf via aluminum foil or an ECG pad.
-- **Light (LDR)**: Build a voltage divider. Connect one end of the LDR to 3.3V, the other end to `GPIO 34`. Also, connect an resistor (e.g. 10k) from `GPIO 34` to GND.
-- **Grounding**: Run a wire from a `GND` pin on the ESP32 into the moist soil of the plant to reduce 50Hz/60Hz EMI.
 
 ---
 
-## 2. Python OSC Receiver (`biotron_receiver.py`)
+## Cách 1: Đo Điện Dung (Capacitive Touch)
+*Nhạy với việc con người tiến lại gần hoặc chạm trực tiếp vào lá cây.*
 
-This Python script listens for OSC data on port 8000 and displays the smoothed incoming values.
+### Phần cứng
+Chỉ cần 2 dây (có thể dùng kẹp cá sấu):
+- `GPIO 4` ──── nối tới thân cây / lá cây (bọc giấy bạc nếu cần).
+- `GND`    ──── cắm xuống đất ẩm (Lưu ý: Nếu giá trị trả về bị bão hòa về 0, hãy rút dây GND này ra khỏi đất và cho người dùng tự chạm vào mạch GND).
 
-### Installation
-Make sure you have Python 3.7+ installed.
-Install the required package `python-osc`:
+### Biên dịch và Nạp Code
+Mở Terminal tại thư mục dự án và chạy lần lượt:
+
+1. **Biên dịch:**
 ```bash
-pip install python-osc
+arduino-cli compile --fqbn esp32:esp32:esp32 01_measure_capacitance
 ```
 
-### Running the Receiver
-Run the script in the terminal:
+2. **Nạp Code (Upload):**
+*(Lưu ý sửa cổng `/dev/ttyUSB0` thành cổng thực tế của mạch trên máy bạn - ví dụ `COM3` trên Windows)*
 ```bash
-python biotron_receiver.py --ip 0.0.0.0 --port 8000
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 01_measure_capacitance
 ```
-This will listen on all interfaces for OSC messages. When the ESP32 connects and sends data, you will see a text-based "bar chart" visualization of the touch and light sensors.
 
-## Integration with TouchDesigner
-In TouchDesigner:
-1. Create an `OSC In CHOP`.
-2. Set the port to match the one configured in the ESP32 (e.g. `8000`).
-3. You will receive two channels: `/biotron/touch` and `/biotron/light`. Map them as described in the project documentation!
+### Chạy Python Receiver
+```bash
+python 01_measure_capacitance/receiver_capacitance.py --port /dev/ttyUSB0
+```
+Bạn sẽ thấy đồ họa thanh Bar hiển thị độ chạm `[🌿 TOUCH]` trực quan trên Terminal. Phím tắt để dừng: `Ctrl+C`.
+
+---
+
+## Cách 2: Đo Trở Kháng Sinh Học (Biological Resistance)
+*Nhạy với trạng thái sinh học của cây (lượng nước, trao đổi chất), không nhạy với sự có mặt của con người.*
+
+### Phần cứng cần có
+- 1 Điện trở **1MΩ**
+- Kẹp cá sấu / Que cắm điện cực (2 cái)
+
+### Sơ đồ đấu nối
+```
+ESP32
+├── GPIO 25 ── [Điện trở 1MΩ] ─┬── Điện cực A (cắm vào cây)
+├── GPIO 32 ───────────────────┘        ~~cây~~
+└── GND     ────────────────────── Điện cực B (cắm vào cây, cách A 5cm)
+```
+
+### Biên dịch và Nạp Code
+Mở Terminal tại thư mục dự án và chạy lần lượt:
+
+1. **Biên dịch:**
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32 02_measure_resistance
+```
+
+2. **Nạp Code (Upload):**
+```bash
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 02_measure_resistance
+```
+
+### Chạy Python Receiver
+```bash
+python 02_measure_resistance/receiver_resistance.py --port /dev/ttyUSB0
+```
+Bạn sẽ thấy đồ họa thanh Bar hiển thị chỉ số trở kháng `[⚡ RESIST]` trực quan trên Terminal. Phím tắt để dừng: `Ctrl+C`.
+
+---
+*Lưu ý: Luôn đảm bảo bạn đã tắt script Python (`Ctrl+C`) trước khi chạy lệnh nạp code `upload`, nếu không cổng Serial sẽ báo lỗi `Device or resource busy`.*
