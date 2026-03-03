@@ -3,24 +3,18 @@ import time
 import argparse
 
 def process_data(line):
-    # Expected format: T:12.34,L:56.78
+    # Expected format: [🌿 RESIST] 85.00
     try:
-        parts = line.split(',')
-        touch_str = parts[0].split(':')[1]
-        light_str = parts[1].split(':')[1]
-        
-        touch_val = float(touch_str)
-        light_val = float(light_str)
-        
-        # Visualize Touch (Inverted so closer = larger bar)
-        touch_display = max(100 - touch_val, 0)
-        touch_bar = "█" * int(touch_display / 4)
-        
-        # Visualize Light
-        light_bar = "☀" * int(light_val / 100)
-        
-        print(f"[🌿 TOUCH] {touch_val:6.2f} | {touch_bar}")
-        print(f"[☀️ LIGHT] {light_val:6.2f} | {light_bar}")
+        if "[🌿 RESIST]" in line:
+            parts = line.split(']')
+            resist_str = parts[1].strip()
+            resist_val = float(resist_str)
+            
+            # Visualize Resistance (Value is 0-100)
+            bar_length = int(resist_val / 4)
+            resist_bar = "⚡" * bar_length
+            
+            print(f"[🌿 RESIST] {resist_val:6.2f} | {resist_bar}")
     except (IndexError, ValueError) as e:
         # Ignore lines that don't match our specific pattern (e.g. boot messages)
         pass
@@ -32,7 +26,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print("=" * 50)
-    print("🌱 Biotron Python Serial Receiver Started")
+    print("🌱 Biological Resistance Receiver Started")
     print(f"🔌 Connecting to {args.port} at {args.baud} baud")
     print("=" * 50)
     
@@ -43,8 +37,9 @@ if __name__ == '__main__':
         
         while True:
             if ser.in_waiting > 0:
-                line = ser.readline().decode('utf-8').strip()
-                process_data(line)
+                line = ser.readline().decode('utf-8', errors='ignore').strip()
+                if line:
+                    process_data(line)
     except serial.SerialException as e:
         print(f"Error opening serial port: {e}")
     except KeyboardInterrupt:
