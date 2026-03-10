@@ -7,7 +7,7 @@ float baseline = 0;
 void setup() {
     Serial.begin(115200);
 
-    touchSetCycles(0x800, 0x800);
+    touchSetCycles(0x1000, 0x1000);
 
     // Calib baseline - đừng chạm
     float sum = 0;
