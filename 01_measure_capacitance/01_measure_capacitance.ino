@@ -15,6 +15,7 @@ const unsigned int outPort = 8000; // <- Port cấu hình trong OSC In CHOP
 WiFiUDP Udp;
 
 float smooth = 0;
+float baseline = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -32,23 +33,26 @@ void setup() {
 
     touchSetCycles(0x800, 0x800);
 
-    // Khởi tạo giá trị ban đầu cho EMA
-    smooth = (float)touchRead(TOUCH_PIN);
+    // Calib baseline - đừng chạm
+    float sum = 0;
+    for (int i = 0; i < 50; i++) {
+        sum += touchRead(TOUCH_PIN);
+        delay(10);
+    }
+    baseline = sum / 50.0;
+    smooth = baseline;
+    Serial.printf("Baseline: %.2f\n", baseline);
 }
 
 void loop() {
     int raw = touchRead(TOUCH_PIN);
     smooth = ALPHA * raw + (1.0 - ALPHA) * smooth;
 
-    // Map thành 0-100 (chỉnh 2 số này theo thực tế)
-    // Dùng kiểu float để chia tỷ lệ mịn hơn (Arduino map() mặc định dùng số nguyên int)
-    float value = (smooth - 15.0) * (0.0 - 100.0) / (40.0 - 15.0) + 100.0;
-    
-    // Constrain giá trị trong khoảng 0-100
-    if (value < 0) value = 0;
-    if (value > 100) value = 100;
+    // Tay chạm → smooth giảm → delta dương
+    float delta = baseline - smooth;
+    float value = constrain((delta / baseline) * 100.0 * 2.0, 0.0, 100.0);
 
-    Serial.printf("[🌿 RAW] %d | [🌿 SMOOTH] %.2f | [🌿 TOUCH] %.2f\n", raw, smooth, value);
+    Serial.printf("[🌿 TOUCH] %.2f\n", value);
 
     // Gửi OSC qua mạng
     OSCMessage msg("/biotron/touch");
