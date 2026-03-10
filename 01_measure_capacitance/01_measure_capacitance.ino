@@ -1,5 +1,5 @@
 #define TOUCH_PIN 4
-#define ALPHA 0.1
+#define ALPHA 0.3  // Tăng lên 0.3 để filter bám sát raw nhanh hơn (phản hồi siêu tốc)
 
 float smooth = 0;
 float baseline = 0;
@@ -7,7 +7,9 @@ float baseline = 0;
 void setup() {
     Serial.begin(115200);
 
-    touchSetCycles(0x1000, 0x1000);
+    // Giảm số chu kỳ đo (Cycles) xuống để hardware ADC đọc nhanh hơn (tăng Sample Rate)
+    // 0x1000 thì đo kỹ nhưng chậm. 0x800 (hoặc 0x500) đo nhanh gấp đôi
+    touchSetCycles(0x800, 0x800);
 
     // Calib baseline - đừng chạm
     float sum = 0;
@@ -31,5 +33,7 @@ void loop() {
     // In ra Serial chỉ TÍNH RA SỐ VALUE (để TouchDesigner đọc dễ dàng qua Serial CHOP)
     Serial.println(value);
 
-    delay(20);
+    // Giảm delay xuống 2ms (Tương đương tốc độ gửi 500 Hz - 500 lần/giây)
+    // TouchDesigner FPS thường là 60Hz, nã 500Hz là dư sức mượt!
+    delay(2);
 }
