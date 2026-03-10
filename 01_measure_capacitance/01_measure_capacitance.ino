@@ -49,8 +49,11 @@ void loop() {
     smooth = ALPHA * raw + (1.0 - ALPHA) * smooth;
 
     // Tay chạm → smooth giảm → delta dương
+    // Tay chạm → smooth giảm → delta dương
     float delta = baseline - smooth;
-    float value = constrain((delta / baseline) * 100.0 * 2.0, 0.0, 100.0);
+    
+    // Khôi phục lại công thức nguyên thủy siêu nhạy: nhân cứng thay vì %
+    float value = constrain(delta * 3.0, 0.0, 100.0);
 
     Serial.printf("[🌿 TOUCH] %.2f\n", value);
 

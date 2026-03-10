@@ -3,18 +3,27 @@ import time
 import argparse
 
 def process_data(line):
-    # Expected format: [🌿 RESIST] 85.00
+    # Expected format: [🌿 RESIST] 85.00  OR  [🌿 RESIST] 85.00 | 4340us
     try:
         if "[🌿 RESIST]" in line:
             parts = line.split(']')
-            resist_str = parts[1].strip()
-            resist_val = float(resist_str)
+            data_part = parts[1].strip()
+            
+            # Tách giá trị mapped và raw time nếu có
+            if '|' in data_part:
+                val_str, raw_str = data_part.split('|', 1)
+                resist_val = float(val_str.strip())
+                raw_info = raw_str.strip()
+            else:
+                resist_val = float(data_part)
+                raw_info = ""
             
             # Visualize Resistance (Value is 0-100)
             bar_length = int(resist_val / 4)
             resist_bar = "⚡" * bar_length
             
-            print(f"[🌿 RESIST] {resist_val:6.2f} | {resist_bar}")
+            extra = f" ({raw_info})" if raw_info else ""
+            print(f"[🌿 RESIST] {resist_val:6.2f} | {resist_bar}{extra}")
     except (IndexError, ValueError) as e:
         # Ignore lines that don't match our specific pattern (e.g. boot messages)
         pass
