@@ -48,18 +48,9 @@ void loop() {
     int raw = touchRead(TOUCH_PIN);
     smooth = ALPHA * raw + (1.0 - ALPHA) * smooth;
 
-    // Drifting baseline logic (Low-pass filter for environmental changes)
-    if (smooth > baseline - 2.0) { 
-        // Nếu ngườii đang không chạm (không có đột biến giảm), cho baseline từ từ bám theo smooth
-        baseline = baseline * 0.999 + smooth * 0.001; 
-    }
-
-    // Tay chạm/gần → smooth giảm → delta dương
+    // Tay chạm → smooth giảm → delta dương
     float delta = baseline - smooth;
-    
-    // Map delta ra 0-100 với độ lợi vừa phải (không quá gắt như * 2.0 để lấy cả proximity)
-    // Hệ số 0.5 - 1.0 giúp lấy được khoảng cách khi người đi tới gần cây thay vì max 100 liền
-    float value = constrain((delta / baseline) * 100.0 * 0.8, 0.0, 100.0);
+    float value = constrain((delta / baseline) * 100.0 * 2.0, 0.0, 100.0);
 
     Serial.printf("[🌿 TOUCH] %.2f\n", value);
 
