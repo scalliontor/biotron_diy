@@ -3,18 +3,26 @@ import time
 import argparse
 
 def process_data(line):
-    # Expected format: [🌿 TOUCH] 75.00
+    # Expected format: [🌿 RAW] 45 | [🌿 SMOOTH] 45.12 | [🌿 TOUCH] 100.00
     try:
         if "[🌿 TOUCH]" in line:
-            parts = line.split(']')
-            touch_str = parts[1].strip()
-            touch_val = float(touch_str)
-            
-            # Visualize Touch (Value is 0-100)
-            bar_length = int(touch_val / 4)
-            touch_bar = "█" * bar_length
-            
-            print(f"[🌿 TOUCH] {touch_val:6.2f} | {touch_bar}")
+            parts = line.split('|')
+            if len(parts) == 3:
+                raw_str = parts[0].split(']')[1].strip()
+                smooth_str = parts[1].split(']')[1].strip()
+                touch_str = parts[2].split(']')[1].strip()
+                
+                touch_val = float(touch_str)
+                bar_length = int(touch_val / 4)
+                touch_bar = "█" * bar_length
+                print(f"🌲 RAW: {raw_str:>5} | ☁️ SMTH: {smooth_str:>6} | [🌿 TOUCH] {touch_val:6.2f} {touch_bar}")
+            else:
+                # Fallback
+                touch_str = parts[-1].split(']')[1].strip()
+                touch_val = float(touch_str)
+                bar_length = int(touch_val / 4)
+                touch_bar = "█" * bar_length
+                print(f"[🌿 TOUCH] {touch_val:6.2f} | {touch_bar}")
     except (IndexError, ValueError) as e:
         # Ignore lines that don't match our specific pattern (e.g. boot messages)
         pass
