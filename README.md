@@ -82,3 +82,32 @@ Bạn sẽ thấy đồ họa thanh Bar hiển thị chỉ số trở kháng `[�
 
 ---
 *Lưu ý: Luôn đảm bảo bạn đã tắt script Python (`Ctrl+C`) trước khi chạy lệnh nạp code `upload`, nếu không cổng Serial sẽ báo lỗi `Device or resource busy`.*
+
+
+## Cắm dây ESP32 + MPR121
+
+Chỉ cần **4 dây** nối 2 con chip với nhau:
+
+```
+MPR121          ESP32
+VCC    ────────  3.3V   (KHÔNG dùng 5V, sẽ cháy chip)
+GND    ────────  GND
+SDA    ────────  GPIO 21
+SCL    ────────  GPIO 22
+```
+
+---
+
+## Sau đó cắm lá cây
+```
+MPR121
+ELE0  ──── kẹp cá sấu ──── lá cây #1
+ELE1  ──── kẹp cá sấu ──── lá cây #2
+...
+```
+
+**Vậy là xong, không cắm thêm gì nữa!**
+
+---
+
+Bạn có thể chụp ảnh con MPR121 của bạn lên không? Vì có nhiều loại board MPR121 khác nhau, chân ra có thể khác nhau một chút, tôi chỉ đúng theo board thực tế của bạn cho chắc.
