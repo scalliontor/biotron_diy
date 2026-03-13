@@ -2,16 +2,17 @@ import serial
 import json
 import argparse
 
-def draw(channels, values, baselines):
+def draw(channels, values, baselines, raws):
     print("\033[H\033[J", end="")  # clear terminal
     print("=== BIOTRON MPR121 DEBUG ===\n")
-    print(f"  {'CHAN':<7} {'FILTER':>6}  {'BASE':>6}  {'DIFF':>6}  STATUS")
-    print(f"  {'----':<7} {'------':>6}  {'----':>6}  {'----':>6}  ------")
-    for i, (t, v, b) in enumerate(zip(channels, values, baselines)):
+    print(f"  {'CHAN':<7} {'RAW':>6}  {'FILTER':>6}  {'BASE':>6}  {'DIFF':>6}  STATUS")
+    print(f"  {'----':<7} {'------':>6}  {'------':>6}  {'----':>6}  {'----':>6}  ------")
+    for i, (t, v, b, r) in enumerate(zip(channels, values, baselines, raws)):
         diff = b - v
         touch_str = "🌿 TOUCH" if t else ""
-        print(f"  ELE{i:02d}   {v:6d}  {b:6d}  {diff:6d}  {touch_str}")
-    print(f"\n  FILTER = gia tri cam bien")
+        print(f"  ELE{i:02d}   {r:6d}  {v:6d}  {b:6d}  {diff:6d}  {touch_str}")
+    print(f"\n  RAW    = gia tri ADC thiet bi 10-bit")
+    print(f"  FILTER = gia tri cam bien (qua filter)")
     print(f"  BASE   = gia tri nen (tu dong calibrate)")
     print(f"  DIFF   = BASE - FILTER (duong = dang cham)")
     print(f"\n  Neu FILTER rat thap (<20) = kiem tra day cap!")
@@ -32,6 +33,7 @@ with serial.Serial(args.port, args.baud, timeout=1) as ser:
                 continue
             data = json.loads(line)
             baselines = data.get("base", [0]*12)
-            draw(data["touch"], data.get("val", [0]*12), baselines)
+            raws = data.get("raw", [0]*12)
+            draw(data["touch"], data.get("val", [0]*12), baselines, raws)
     except KeyboardInterrupt:
         print("\nDa dung.")
